@@ -1,0 +1,13 @@
+bin
+build
+dist
+res
+venvv
+characters.json
+settings.json
+sdlt.txt
+version.txt
+main.spec
+inputs.txt
+eula.txt
+create_shortcut.bat
