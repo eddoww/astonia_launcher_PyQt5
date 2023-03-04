@@ -53,27 +53,6 @@ class UpdateApp(QWidget):
         # Load user input values
         self.restore_inputs()
 
-        # self.username_input_label = QLabel("Username")
-        # self.username_input = QLineEdit(self)
-        # self.username_input.setText(self.inputs.get("username", ""))
-        # self.username_input.setLabelText("Username")
-
-        # self.password_input_label = QLabel("Password")
-        # self.password_input = QLineEdit(self)
-        # self.password_input.setText(self.inputs.get("password", ""))
-        # self.password_input.setEchoMode(QLineEdit.Password)
-        # self.password_input.setLabelText("Password")
-
-        # self.server_input_label = QLabel("Server")
-        # self.server_input = QComboBox(self)
-        # self.server_input.addItem("Localhost (127.0.0.1)", "127.0.0.1")
-        # self.server_input.addItem("Local Network (192.168.1.110)", "192.168.1.110")
-        # self.server_input.addItem("Ugaris Server", "login.ugaris.com")
-        # self.server_input.setCurrentIndex(int(self.inputs.get("server", 0)))
-        # self.server_input.addItem("Localhost", "127.0.0.1")
-        # self.server_input.addItem("Localhost", "127.0.0.1")
-        # self.server_input.addItem("Localhost", "127.0.0.1")
-
         self.PlayButton = QPushButton(self)
         self.PlayButton.setText("Launch App")
         self.PlayButton.setEnabled(False)
@@ -103,12 +82,6 @@ class UpdateApp(QWidget):
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.progress_bar)
         self.layout.addWidget(self.CharacterTable)
-        # self.layout.addWidget(self.username_input_label)
-        # self.layout.addWidget(self.username_input)
-        # self.layout.addWidget(self.password_input_label)
-        # self.layout.addWidget(self.password_input)
-        # self.layout.addWidget(self.server_input_label)
-        # self.layout.addWidget(self.server_input)
         self.layout.addWidget(self.remember_checkbox)
         self.layout.addWidget(self.PlayButton)
         self.setLayout(self.layout)
@@ -135,9 +108,6 @@ class UpdateApp(QWidget):
                 self.CharacterTable.setColumnHidden(2, True)
 
     def initSignals(self):
-        # self.username_input.textChanged.connect(self.usernameChanged)
-        # self.password_input.textChanged.connect(self.passwordChanged)
-        # self.server_input.currentIndexChanged.connect(self.serverChanged)
         self.PlayButton.clicked.connect(self.launch_app)
         self.SettingsButton.clicked.connect(self.open_settings_dialog)
         self.addCharacterButton.clicked.connect(self.open_add_character_dialog)
