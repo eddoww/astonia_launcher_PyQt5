@@ -154,10 +154,15 @@ class UpdateApp(QWidget):
 
                 # Add a delete button with a red cross icon to the fourth column
                 delete_button = QPushButton()
-                delete_button.setIcon(QIcon("red_cross_icon.png"))
+                delete_button.setIcon(QIcon("icons/red_cross.png"))
                 delete_button.setToolTip("Delete character")
                 delete_button.clicked.connect(self.handle_delete_button_click)
                 self.CharacterTable.setCellWidget(row, 3, delete_button)
+
+                self.CharacterTable.resizeColumnToContents(0)
+                self.CharacterTable.resizeColumnToContents(1)
+                self.CharacterTable.resizeColumnToContents(2)
+                self.CharacterTable.resizeColumnToContents(3)
 
     def handle_delete_button_click(self):
         button = self.sender()
