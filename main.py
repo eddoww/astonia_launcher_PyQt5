@@ -1,12 +1,26 @@
+import json
 import os
 import sys
 
-from bitarray import bitarray
 import requests
-import json
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QProgressBar, QMessageBox, QVBoxLayout, \
-    QLineEdit, QComboBox, QCheckBox, QDialog, QTableWidget, QTableWidgetItem, QAbstractItemView
-from bitfields import Bits
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (
+    QApplication,
+    QWidget,
+    QLabel,
+    QPushButton,
+    QProgressBar,
+    QMessageBox,
+    QVBoxLayout,
+    QLineEdit,
+    QComboBox,
+    QCheckBox,
+    QDialog,
+    QTableWidget,
+    QTableWidgetItem,
+    QAbstractItemView,
+)
+from bitarray import bitarray
 
 from settings_dialog import SettingsDialog
 
@@ -24,8 +38,14 @@ class UpdateApp(QWidget):
         self.repo_name = "astonia_client"
         self.release_api_url = f"https://api.github.com/repos/{self.repo_owner}/{self.repo_name}/releases/latest"
         self.latest_version_file = "version.txt"
-        self.settings_file = "settings.txt"
+        self.settings_file = "settings/settings.json"
+        self.characters_file = "settings/characters.json"
         self.release_api_url_body = requests.get(self.release_api_url).json()
+
+        # Selected Character
+        self.character = None
+        self.server = None
+        self.password = None
 
         # initialize the dialogs
         self.settings_dialog = SettingsDialog(self)
@@ -68,8 +88,10 @@ class UpdateApp(QWidget):
 
         # Table
         self.CharacterTable = QTableWidget()
-        self.CharacterTable.setColumnCount(3)
-        self.CharacterTable.setHorizontalHeaderLabels(['Server', 'Name', 'Password'])
+        self.CharacterTable.setColumnCount(4)
+        self.CharacterTable.setHorizontalHeaderLabels(
+            ["Server", "Name", "Password", "Delete"]
+        )
         self.CharacterTable.setEditTriggers(QTableWidget.NoEditTriggers)
         self.CharacterTable.setSortingEnabled(True)
         self.CharacterTable.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -89,28 +111,105 @@ class UpdateApp(QWidget):
         # Show the UI
         self.show()
 
+    def handle_character_selection_change(self):
+        selected_rows = self.CharacterTable.selectionModel().selectedRows()
+        if len(selected_rows) == 1:
+            # Get the server and character names from the selected row
+            row = selected_rows[0].row()
+            server_item = self.CharacterTable.item(row, 0)
+            character_item = self.CharacterTable.item(row, 1)
+            password_item = self.CharacterTable.item(row, 2)
+            if server_item and character_item and password_item:
+                self.server = server_item.text()
+                self.character = character_item.text()
+                self.password = password_item.text()
+
     def populate_character_table(self):
         try:
-            with open('characters.json', 'r') as f:
+            with open(self.characters_file, "r") as f:
                 characters = json.load(f)
         except FileNotFoundError:
             characters = []
         # Clear table and populate it with logins
         self.CharacterTable.setRowCount(0)
         for character in characters:
-            if isinstance(character,
-                          dict) and 'server' in character and 'username' in character and 'password' in character:
+            if (
+                    isinstance(character, dict)
+                    and "server" in character
+                    and "username" in character
+                    and "password" in character
+            ):
                 row = self.CharacterTable.rowCount()
                 self.CharacterTable.insertRow(row)
-                self.CharacterTable.setItem(row, 0, QTableWidgetItem(character['server']))
-                self.CharacterTable.setItem(row, 1, QTableWidgetItem(character['username']))
-                self.CharacterTable.setItem(row, 2, QTableWidgetItem(character['password']))
+                self.CharacterTable.setItem(
+                    row, 0, QTableWidgetItem(character["server"])
+                )
+                self.CharacterTable.setItem(
+                    row, 1, QTableWidgetItem(character["username"])
+                )
+                self.CharacterTable.setItem(
+                    row, 2, QTableWidgetItem(character["password"])
+                )
                 self.CharacterTable.setColumnHidden(2, True)
+
+                # Add a delete button with a red cross icon to the fourth column
+                delete_button = QPushButton()
+                delete_button.setIcon(QIcon("red_cross_icon.png"))
+                delete_button.setToolTip("Delete character")
+                delete_button.clicked.connect(self.handle_delete_button_click)
+                self.CharacterTable.setCellWidget(row, 3, delete_button)
+
+    def handle_delete_button_click(self):
+        button = self.sender()
+        row = self.CharacterTable.indexAt(button.pos()).row()
+        server_item = self.CharacterTable.item(row, 0)
+        character_item = self.CharacterTable.item(row, 1)
+        if server_item and character_item:
+            server = server_item.text()
+            character = character_item.text()
+
+            # Prompt the user to confirm the deletion
+            message_box = QMessageBox()
+            message_box.setText(
+                f"Are you sure you want to delete {character} connected to {server}?"
+            )
+            message_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            message_box.setDefaultButton(QMessageBox.No)
+            result = message_box.exec_()
+            if result == QMessageBox.Yes:
+                # Remove the character from the JSON file
+                self.remove_character(server, character)
+                # Refresh the table
+                self.populate_character_table()
+
+    def remove_character(self, server, character):
+        # Load the current settings from the JSON file
+        if os.path.isfile(self.characters_file):
+            with open(self.characters_file, "r") as f:
+                settings = json.load(f)
+        else:
+            settings = []
+
+        # Remove the character data from the settings
+        for character_data in settings:
+            if (
+                    character_data["server"] == server
+                    and character_data["username"] == character
+            ):
+                settings.remove(character_data)
+                break
+
+        # Save the updated settings to the JSON file
+        with open(self.characters_file, "w") as f:
+            json.dump(settings, f)
 
     def initSignals(self):
         self.PlayButton.clicked.connect(self.launch_app)
         self.SettingsButton.clicked.connect(self.open_settings_dialog)
         self.addCharacterButton.clicked.connect(self.open_add_character_dialog)
+        self.CharacterTable.itemSelectionChanged.connect(
+            self.handle_character_selection_change
+        )
 
     def open_settings_dialog(self):
         self.settings_dialog.show()
@@ -127,6 +226,7 @@ class UpdateApp(QWidget):
         password_input = QLineEdit(self.add_character_dialog)
         password_input.setEchoMode(QLineEdit.Password)
 
+        # TODO: Should allow servers to be added/created
         server_input_label = QLabel("Server")
         server_input = QComboBox(self)
         server_input.addItem("Localhost (127.0.0.1)", "127.0.0.1")
@@ -149,15 +249,20 @@ class UpdateApp(QWidget):
 
         # Connect the save button to a function to save the data
         save_button.clicked.connect(
-            lambda: self.save_character(server_input.currentData(), character_input.text(), password_input.text()))
+            lambda: self.save_character(
+                server_input.currentData(),
+                character_input.text(),
+                password_input.text(),
+            )
+        )
 
         self.add_character_dialog.setLayout(layout)
         self.add_character_dialog.exec_()
 
     def save_character(self, server, character, password):
         # Load the current settings from the JSON file
-        if os.path.isfile("characters.json"):
-            with open("characters.json", "r") as f:
+        if os.path.isfile(self.characters_file):
+            with open(self.characters_file, "r") as f:
                 settings = json.load(f)
         else:
             settings = []
@@ -167,7 +272,7 @@ class UpdateApp(QWidget):
         settings.append(character_data)
 
         # Save the updated settings to the JSON file
-        with open("characters.json", "w") as f:
+        with open(self.characters_file, "w") as f:
             json.dump(settings, f)
 
         # Close the dialog
@@ -177,8 +282,8 @@ class UpdateApp(QWidget):
 
     def save_settings(self, server, character, password):
         # Load the current settings from the JSON file
-        if os.path.isfile("settings.json"):
-            with open("settings.json", "r") as f:
+        if os.path.isfile(self.settings_file):
+            with open(self.settings_file, "r") as f:
                 settings = json.load(f)
         else:
             settings = {"servers": [], "characters": []}
@@ -190,7 +295,7 @@ class UpdateApp(QWidget):
         settings["characters"].append(character_data)
 
         # Save the updated settings to the JSON file
-        with open("settings.json", "w") as f:
+        with open(self.settings_file, "w") as f:
             json.dump(settings, f)
 
         # Close the dialog
@@ -198,14 +303,14 @@ class UpdateApp(QWidget):
 
     def restore_inputs(self):
         self.inputs = {}
-        if os.path.isfile("inputs.txt"):
-            with open("inputs.txt", "r") as f:
+        if os.path.isfile("settings/inputs.txt"):
+            with open("settings/inputs.txt", "r") as f:
                 for line in f:
                     key, value = line.strip().split(":")
                     self.inputs[key] = value
 
     def save_inputs(self):
-        with open("inputs.txt", "w") as f:
+        with open("settings/inputs.txt", "w") as f:
             for key, value in self.inputs.items():
                 f.write(f"{key}:{value}\n")
 
@@ -244,7 +349,9 @@ class UpdateApp(QWidget):
 
             # Display update message
             message = f"A new version ({latest_version}) of the app is available:\n\n{release_notes}"
-            response = QMessageBox.question(self, "Update Available", message, QMessageBox.Yes | QMessageBox.No)
+            response = QMessageBox.question(
+                self, "Update Available", message, QMessageBox.Yes | QMessageBox.No
+            )
 
             if response == QMessageBox.Yes:
                 self.label.setText("Downloading update...")
@@ -261,7 +368,7 @@ class UpdateApp(QWidget):
             with requests.get(asset_url, stream=True) as r:
                 r.raise_for_status()
                 self.progress_bar.show()
-                with open(release_file, 'wb') as f:
+                with open(release_file, "wb") as f:
                     total_length = int(r.headers.get("content-length"))
                     dl = 0
                     for chunk in r.iter_content(chunk_size=8192):
@@ -281,6 +388,7 @@ class UpdateApp(QWidget):
 
         # Extract the release files to the current directory
         import zipfile
+
         with zipfile.ZipFile(release_file, "r") as zip_ref:
             zip_ref.extractall(".")
 
@@ -296,16 +404,16 @@ class UpdateApp(QWidget):
     def create_options_arg(self):
 
         option_mapping = {
-            'enable_dark_gui': 0,
-            'enable_context': 1,
-            'enable_actionbar': 2,
-            'enable_smaller_bottom_window': 3,
-            'enable_smaller_top_window': 4,
-            'enable_big_health_bar': 5,
-            'enable_sound': 6,
-            'enable_large_font': 7,
-            'enable_true_full_screen': 8,
-            'enable_legacy_mouse_wheel': 9
+            "enable_dark_gui": 0,
+            "enable_context": 1,
+            "enable_actionbar": 2,
+            "enable_smaller_bottom_window": 3,
+            "enable_smaller_top_window": 4,
+            "enable_big_health_bar": 5,
+            "enable_sound": 6,
+            "enable_large_font": 7,
+            "enable_true_full_screen": 8,
+            "enable_legacy_mouse_wheel": 9,
         }
 
         options = bitarray(len(option_mapping))
@@ -315,13 +423,12 @@ class UpdateApp(QWidget):
                 checkbox = getattr(self.settings_dialog, checkbox_name)
                 if checkbox.isChecked():
                     options[option_value] = True
-        return int.from_bytes(options.tobytes(), byteorder='little')
+        return int.from_bytes(options.tobytes(), byteorder="little")
 
     def launch_app(self):
-
-        server = self.CharacterTable.item(self.CharacterTable.currentRow(), 0).text()
-        username = self.CharacterTable.item(self.CharacterTable.currentRow(), 1).text()
-        password = self.CharacterTable.item(self.CharacterTable.currentRow(), 2).text()
+        server = self.server
+        username = self.character
+        password = self.password
         width = self.settings_dialog.desired_width.text()
         height = self.settings_dialog.desired_height.text()
         sdl_cache = self.settings_dialog.sdl_cache_size.text()
@@ -334,23 +441,49 @@ class UpdateApp(QWidget):
         if sys.platform == "linux" or sys.platform == "linux2":
             # linux
             app_path = "wine"
-            app_args = ["bin/moac.exe", f"-u {username}", f"-p {password}",
-                        f"-d {server}", f"-w {width}",
-                        f"-h {height}", f"-o {options_arg}", f"-c {sdl_cache}", f"-k {sdl_frames}", f"-m {sdl_multi}"]
+            app_args = [
+                "bin/moac.exe",
+                f"-u {username}",
+                f"-p {password}",
+                f"-d {server}",
+                f"-w {width}",
+                f"-h {height}",
+                f"-o {options_arg}",
+                f"-c {sdl_cache}",
+                f"-k {sdl_frames}",
+                f"-m {sdl_multi}",
+            ]
 
         elif sys.platform == "darwin":
             # OS X
             app_path = "wine"
-            app_args = ["bin/moac.exe", f"-u {username}", f"-p {password}",
-                        f"-d {server}", f"-w {width}",
-                        f"-h {height}", f"-o {options_arg}", f"-c {sdl_cache}", f"-k {sdl_frames}", f"-m {sdl_multi}"]
+            app_args = [
+                "bin/moac.exe",
+                f"-u {username}",
+                f"-p {password}",
+                f"-d {server}",
+                f"-w {width}",
+                f"-h {height}",
+                f"-o {options_arg}",
+                f"-c {sdl_cache}",
+                f"-k {sdl_frames}",
+                f"-m {sdl_multi}",
+            ]
 
         elif sys.platform == "win32":
             # Windows...
             app_path = "bin/moac.exe"
-            app_args = [f"-u {username}", f"-p {password}",
-                        f"-d {server}", f"-w {width}",
-                        f"-h {height}", f"-o {options_arg}", f"-c {sdl_cache}", f"-k {sdl_frames}", f"-m {sdl_multi}"]
+            app_args = [
+                f"-u {username}",
+                f"-p {password}",
+                f"-d {server}",
+                f"-w {width}",
+                f"-h {height}",
+                f"-o {options_arg}",
+                f"-c {sdl_cache}",
+                f"-k {sdl_frames}",
+                f"-m {sdl_multi}",
+            ]
 
         # Launch the app
         try:

@@ -1,6 +1,14 @@
 import json
 
-from PyQt5.QtWidgets import QDialog, QSpinBox, QCheckBox, QLineEdit, QGridLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import (
+    QDialog,
+    QSpinBox,
+    QCheckBox,
+    QLineEdit,
+    QGridLayout,
+    QLabel,
+    QPushButton,
+)
 
 
 class SettingsDialog(QDialog):
@@ -74,8 +82,8 @@ class SettingsDialog(QDialog):
         layout.addWidget(QLabel("SDL multi"), 16, 0)
         layout.addWidget(self.sdl_multi, 16, 1)
         # Buttons
-        self.save_button = QPushButton('Save')
-        self.cancel_button = QPushButton('Cancel')
+        self.save_button = QPushButton("Save")
+        self.cancel_button = QPushButton("Cancel")
         layout.addWidget(self.save_button, 17, 0)
         layout.addWidget(self.cancel_button, 17, 1)
 
@@ -90,13 +98,25 @@ class SettingsDialog(QDialog):
 
     def save_settings_to_file(self):
         # List of field names
-        field_names = ['desired_width', 'desired_height', 'enable_fullscreen', 'enable_sound', 'enable_dark_gui',
-                       'enable_context',
-                       'enable_actionbar', 'enable_smaller_bottom_window', 'enable_smaller_top_window',
-                       'enable_big_health_bar',
-                       'enable_large_font', 'enable_true_full_screen', 'enable_legacy_mouse_wheel', 'executable_name',
-                       'sdl_frames', 'sdl_cache_size',
-                       'sdl_multi']
+        field_names = [
+            "desired_width",
+            "desired_height",
+            "enable_fullscreen",
+            "enable_sound",
+            "enable_dark_gui",
+            "enable_context",
+            "enable_actionbar",
+            "enable_smaller_bottom_window",
+            "enable_smaller_top_window",
+            "enable_big_health_bar",
+            "enable_large_font",
+            "enable_true_full_screen",
+            "enable_legacy_mouse_wheel",
+            "executable_name",
+            "sdl_frames",
+            "sdl_cache_size",
+            "sdl_multi",
+        ]
 
         # Create an empty dictionary to hold the settings
         settings_dict = {}
@@ -115,32 +135,32 @@ class SettingsDialog(QDialog):
             elif isinstance(field_widget, QSpinBox):
                 settings_dict[field_name] = field_widget.value()
 
-        with open("settings.json", 'w') as f:
+        with open("settings/settings.json", "w") as f:
             json.dump(settings_dict, f)
             self.close()
 
     def load_settings_from_file(self):
         default_settings_dict = {
-            'desired_width': 1600,
-            'desired_height': 1200,
-            'enable_fullscreen': False,
-            'enable_sound': True,
-            'enable_dark_gui': False,
-            'enable_context': True,
-            'enable_actionbar': True,
-            'enable_smaller_bottom_window': True,
-            'enable_smaller_top_window': True,
-            'enable_big_health_bar': True,
-            'enable_large_font': False,
-            'enable_true_full_screen': False,
-            'enable_legacy_mouse_wheel': False,
-            'executable_name': "bin/moac.exe",
-            'sdl_frames': 24,
-            'sdl_cache_size': 8000,
-            'sdl_multi': 4
+            "desired_width": 1600,
+            "desired_height": 1200,
+            "enable_fullscreen": False,
+            "enable_sound": True,
+            "enable_dark_gui": False,
+            "enable_context": True,
+            "enable_actionbar": True,
+            "enable_smaller_bottom_window": True,
+            "enable_smaller_top_window": True,
+            "enable_big_health_bar": True,
+            "enable_large_font": False,
+            "enable_true_full_screen": False,
+            "enable_legacy_mouse_wheel": False,
+            "executable_name": "bin/moac.exe",
+            "sdl_frames": 24,
+            "sdl_cache_size": 8000,
+            "sdl_multi": 4,
         }
         try:
-            with open("settings.json", 'r') as f:
+            with open("settings/settings.json", "r") as f:
                 settings_dict = json.load(f)
         except FileNotFoundError:
             # Return default settings if file not found

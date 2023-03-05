@@ -3,8 +3,8 @@ build
 dist
 res
 venvv
-characters.json
-settings.json
+settings/characters.json
+settings/settings.json
 sdlt.txt
 version.txt
 main.spec
