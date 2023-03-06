@@ -13,15 +13,15 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QVBoxLayout,
     QLineEdit,
-    QComboBox,
     QCheckBox,
     QDialog,
     QTableWidget,
     QTableWidgetItem,
-    QAbstractItemView,
+    QAbstractItemView, QInputDialog, QHBoxLayout,
 )
 from bitarray import bitarray
 
+from ServerComboBox import ServerComboBox
 from settings_dialog import SettingsDialog
 
 
@@ -50,16 +50,18 @@ class UpdateApp(QWidget):
         # initialize the dialogs
         self.settings_dialog = SettingsDialog(self)
         self.settings_dialog.load_settings_from_file()
+        self.server_input = ServerComboBox(self)
+        self.server_input.hide()
 
         self.add_character_dialog = QDialog(self)
 
-        self.initUI()
-        self.initSignals()
+        self.init_ui()
+        self.init_signals()
         self.restore_inputs()
 
         self.check_updates()
 
-    def initUI(self):
+    def init_ui(self):
         # UI setup
         self.setWindowTitle("Astonia Launcher")
 
@@ -208,7 +210,7 @@ class UpdateApp(QWidget):
         with open(self.characters_file, "w") as f:
             json.dump(settings, f)
 
-    def initSignals(self):
+    def init_signals(self):
         self.PlayButton.clicked.connect(self.launch_app)
         self.SettingsButton.clicked.connect(self.open_settings_dialog)
         self.addCharacterButton.clicked.connect(self.open_add_character_dialog)
@@ -231,18 +233,23 @@ class UpdateApp(QWidget):
         password_input = QLineEdit(self.add_character_dialog)
         password_input.setEchoMode(QLineEdit.Password)
 
-        # TODO: Should allow servers to be added/created
         server_input_label = QLabel("Server")
-        server_input = QComboBox(self)
-        server_input.addItem("Localhost (127.0.0.1)", "127.0.0.1")
-        server_input.addItem("Local Network (192.168.1.110)", "192.168.1.110")
-        server_input.addItem("Ugaris Server", "login.ugaris.com")
-        server_input.setCurrentIndex(int(self.inputs.get("server", 0)))
+        # Create the QHBoxLayout for the buttons
+        button_layout = QHBoxLayout()
+
+        # Add the "Add" button to the QHBoxLayout
+        add_server_button = QPushButton("Add")
+        button_layout.addWidget(add_server_button)
+
+        # Add the "Remove" button to the QHBoxLayout
+        remove_server_button = QPushButton("Remove")
+        button_layout.addWidget(remove_server_button)
 
         # Create a layout for the dialog
         layout = QVBoxLayout()
         layout.addWidget(server_input_label)
-        layout.addWidget(server_input)
+        layout.addWidget(self.server_input)
+        layout.addLayout(button_layout)
         layout.addWidget(character_input_label)
         layout.addWidget(character_input)
         layout.addWidget(password_input_label)
@@ -252,17 +259,32 @@ class UpdateApp(QWidget):
         save_button = QPushButton("Save", self.add_character_dialog)
         layout.addWidget(save_button)
 
+        # Add server button clicked
+        add_server_button.clicked.connect(self.on_add_server)
+        remove_server_button.clicked.connect(self.on_delete_server)
         # Connect the save button to a function to save the data
         save_button.clicked.connect(
             lambda: self.save_character(
-                server_input.currentData(),
+                self.server_input.currentData(),
                 character_input.text(),
                 password_input.text(),
             )
         )
-
+        self.server_input.show()
         self.add_character_dialog.setLayout(layout)
         self.add_character_dialog.exec_()
+
+    def on_delete_server(self):
+        index = self.server_input.currentIndex()
+        if index >= 0:
+            self.server_input.delete_server(index)
+
+    def on_add_server(self):
+        name, ok = QInputDialog.getText(self, 'Add Server', 'Server Name:')
+        if ok:
+            address, ok = QInputDialog.getText(self, 'Add Server', 'Server Address:')
+            if ok:
+                self.server_input.add_server(name, address)
 
     def save_character(self, server, character, password):
         # Load the current settings from the JSON file
@@ -319,17 +341,17 @@ class UpdateApp(QWidget):
             for key, value in self.inputs.items():
                 f.write(f"{key}:{value}\n")
 
-    def serverChanged(self, index):
+    def server_changed(self, index):
         self.inputs["server"] = index
         if self.remember_checkbox.isChecked():
             self.save_inputs()
 
-    def usernameChanged(self, text):
+    def username_changed(self, text):
         self.inputs["username"] = text
         if self.remember_checkbox.isChecked():
             self.save_inputs()
 
-    def passwordChanged(self, text):
+    def password_changed(self, text):
         self.inputs["password"] = text
         if self.remember_checkbox.isChecked():
             self.save_inputs()
