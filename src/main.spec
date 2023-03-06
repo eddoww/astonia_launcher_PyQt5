@@ -1,10 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
+PROJECT_NAME = "astonia_launcher"
 
-
-a = Analysis(['main.py'],
-             pathex=['Z:\\src'],
+a = Analysis(
+             ['main.py'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -21,7 +21,7 @@ exe = EXE(pyz,
           a.scripts,
           [],
           exclude_binaries=True,
-          name='main',
+          name=PROJECT_NAME,
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
@@ -34,4 +34,4 @@ coll = COLLECT(exe,
                strip=False,
                upx=True,
                upx_exclude=[],
-               name='main')
+               name=PROJECT_NAME)
