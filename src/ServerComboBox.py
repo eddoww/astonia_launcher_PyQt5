@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
 class ServerComboBox(QComboBox):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.servers_file = "settings/servers.json"
+        self.servers_file = "../settings/servers.json"
         self.load_servers()
 
     def load_servers(self):

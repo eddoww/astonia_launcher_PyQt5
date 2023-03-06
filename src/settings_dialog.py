@@ -135,7 +135,7 @@ class SettingsDialog(QDialog):
             elif isinstance(field_widget, QSpinBox):
                 settings_dict[field_name] = field_widget.value()
 
-        with open("settings/settings.json", "w") as f:
+        with open("../settings/settings.json", "w") as f:
             json.dump(settings_dict, f)
             self.close()
 
@@ -160,7 +160,7 @@ class SettingsDialog(QDialog):
             "sdl_multi": 4,
         }
         try:
-            with open("settings/settings.json", "r") as f:
+            with open("../settings/settings.json", "r") as f:
                 settings_dict = json.load(f)
         except FileNotFoundError:
             # Return default settings if file not found

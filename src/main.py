@@ -37,9 +37,9 @@ class AstoniaLauncher(QWidget):
         self.repo_owner = "DanielBrockhaus"
         self.repo_name = "astonia_client"
         self.release_api_url = f"https://api.github.com/repos/{self.repo_owner}/{self.repo_name}/releases/latest"
-        self.latest_version_file = "version.txt"
-        self.settings_file = "settings/settings.json"
-        self.characters_file = "settings/characters.json"
+        self.latest_version_file = "../version.txt"
+        self.settings_file = "../settings/settings.json"
+        self.characters_file = "../settings/characters.json"
         self.release_api_url_body = requests.get(self.release_api_url).json()
 
         # Selected Character
@@ -154,7 +154,7 @@ class AstoniaLauncher(QWidget):
 
                 # Add a delete button with a red cross icon to the fourth column
                 delete_button = QPushButton()
-                delete_button.setIcon(QIcon("icons/red_cross.png"))
+                delete_button.setIcon(QIcon("../icons/red_cross.png"))
                 delete_button.setToolTip("Delete character")
                 delete_button.clicked.connect(self.handle_delete_button_click)
                 self.CharacterTable.setCellWidget(row, 3, delete_button)
@@ -512,7 +512,7 @@ class AstoniaLauncher(QWidget):
 
         elif sys.platform == "win32":
             # Windows...
-            app_path = "bin/moac.exe"
+            app_path = "../bin/moac.exe"
             app_args = [
                 f"-u {username}",
                 f"-p {password}",
