@@ -7,8 +7,8 @@ defaults:
     shell: bash
 
 env:
-  python-version: "3.8"
-  pyinstaller-version: "4.3"
+  python-version: "3.10"
+  pyinstaller-version: "5.8"
   project-name: astonia_launcher
 
 jobs:
