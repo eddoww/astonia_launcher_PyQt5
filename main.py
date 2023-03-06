@@ -25,7 +25,7 @@ from ServerComboBox import ServerComboBox
 from settings_dialog import SettingsDialog
 
 
-class UpdateApp(QWidget):
+class AstoniaLauncher(QWidget):
     def __init__(self):
         super().__init__()
 
@@ -47,12 +47,10 @@ class UpdateApp(QWidget):
         self.server = None
         self.password = None
 
-        # initialize the dialogs
+        # Settings dialog
         self.settings_dialog = SettingsDialog(self)
         self.settings_dialog.load_settings_from_file()
-        self.server_input = ServerComboBox(self)
-        self.server_input.hide()
-
+        # Add Character Dialog
         self.add_character_dialog = QDialog(self)
 
         self.init_ui()
@@ -224,13 +222,14 @@ class UpdateApp(QWidget):
 
     def open_add_character_dialog(self):
         self.add_character_dialog.setWindowTitle("Add Character")
-
+        # Server Input
+        self.server_input = ServerComboBox(self)
         # Create input fields for character data
         character_input_label = QLabel("Character")
-        character_input = QLineEdit(self.add_character_dialog)
+        character_input = QLineEdit()
 
         password_input_label = QLabel("Password")
-        password_input = QLineEdit(self.add_character_dialog)
+        password_input = QLineEdit()
         password_input.setEchoMode(QLineEdit.Password)
 
         server_input_label = QLabel("Server")
@@ -255,24 +254,38 @@ class UpdateApp(QWidget):
         layout.addWidget(password_input_label)
         layout.addWidget(password_input)
 
-        # Create a button to save the data
-        save_button = QPushButton("Save", self.add_character_dialog)
-        layout.addWidget(save_button)
+        # Create the QHBoxLayout for the buttons
+        button_layout = QHBoxLayout()
+
+        # Add the "Add" button to the QHBoxLayout
+        add_character_button = QPushButton("Add")
+        button_layout.addWidget(add_character_button)
+
+        # Add the "Remove" button to the QHBoxLayout
+        cancel_button = QPushButton("Cancel")
+        button_layout.addWidget(cancel_button)
+
+        layout.addLayout(button_layout)
 
         # Add server button clicked
         add_server_button.clicked.connect(self.on_add_server)
         remove_server_button.clicked.connect(self.on_delete_server)
+
         # Connect the save button to a function to save the data
-        save_button.clicked.connect(
+        add_character_button.clicked.connect(
             lambda: self.save_character(
                 self.server_input.currentData(),
                 character_input.text(),
                 password_input.text(),
             )
         )
-        self.server_input.show()
+        cancel_button.clicked.connect(self.on_add_character_dialog_close)
+
         self.add_character_dialog.setLayout(layout)
         self.add_character_dialog.exec_()
+
+    def on_add_character_dialog_close(self):
+        self.add_character_dialog.close()
 
     def on_delete_server(self):
         index = self.server_input.currentIndex()
@@ -525,6 +538,6 @@ class UpdateApp(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    update_app = UpdateApp()
-    update_app.show()
+    launcher = AstoniaLauncher()
+    launcher.show()
     sys.exit(app.exec_())
