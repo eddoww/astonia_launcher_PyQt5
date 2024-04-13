@@ -3,10 +3,10 @@ build
 dist
 res
 venvv
-settings/characters.json
-settings/settings.json
+src/settings/characters.json
+src/settings/settings.json
 sdlt.txt
-version.txt
+src/version.txt
 inputs.txt
 eula.txt
 create_shortcut.bat

@@ -32,20 +32,27 @@ class AstoniaLauncher(QWidget):
         # Window setup
         self.setMinimumWidth(400)
         self.setMinimumHeight(400)
+        if getattr(sys, 'frozen', False):
+            # If the application is run as a bundle, the PyInstaller bootloader
+            # extends the sys module by a flag frozen=True and sets the app
+            # path into variable _MEIPASS'.
+            application_path = sys._MEIPASS
+        else:
+            application_path = os.path.dirname(os.path.abspath(__file__))
 
         # URLs and file paths
         self.repo_owner = "DanielBrockhaus"
         self.repo_name = "astonia_client"
         self.release_api_url = f"https://api.github.com/repos/{self.repo_owner}/{self.repo_name}/releases/latest"
-        self.latest_version_file = "../version.txt"
-        self.settings_file = "../settings/settings.json"
-        self.characters_file = "../settings/characters.json"
+        self.latest_version_file = os.path.join('settings', 'version.json')
+        self.settings_file = os.path.join('settings', 'settings.json')
+        self.characters_file = os.path.join('settings', 'characters.json')
         self.release_api_url_body = requests.get(self.release_api_url).json()
 
         # Selected Character
-        self.character = None
-        self.server = None
-        self.password = None
+        self.character = ""
+        self.server = ""
+        self.password = ""
 
         # Settings dialog
         self.settings_dialog = SettingsDialog(self)
@@ -96,7 +103,6 @@ class AstoniaLauncher(QWidget):
         self.CharacterTable.setSortingEnabled(True)
         self.CharacterTable.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.populate_character_table()
-        self.CharacterTable.selectRow(0)
 
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.SettingsButton)
@@ -154,7 +160,7 @@ class AstoniaLauncher(QWidget):
 
                 # Add a delete button with a red cross icon to the fourth column
                 delete_button = QPushButton()
-                delete_button.setIcon(QIcon("../icons/red_cross.png"))
+                delete_button.setIcon(QIcon("icons/red_cross.png"))
                 delete_button.setToolTip("Delete character")
                 delete_button.clicked.connect(self.handle_delete_button_click)
                 self.CharacterTable.setCellWidget(row, 3, delete_button)
@@ -446,7 +452,7 @@ class AstoniaLauncher(QWidget):
         option_mapping = {
             "enable_dark_gui": 0,
             "enable_context": 1,
-            "enable_actionbar": 2,
+            "enable_keybindings": 2,
             "enable_smaller_bottom_window": 3,
             "enable_smaller_top_window": 4,
             "enable_big_health_bar": 5,
@@ -454,9 +460,13 @@ class AstoniaLauncher(QWidget):
             "enable_large_font": 7,
             "enable_true_full_screen": 8,
             "enable_legacy_mouse_wheel": 9,
+            "enable_gamma_increase": 14,  # Assuming bit positions 14-15 for gamma
+            "enable_minimap_management": 13,
+            "enable_minimap": 18,
+            "enable_appdata_usage": 12
         }
 
-        options = bitarray(len(option_mapping))
+        options = bitarray(len(option_mapping) + 7)  # Adjusted size for the maximum bit index used + 1
         options.setall(False)
         if self.settings_dialog:
             for checkbox_name, option_value in option_mapping.items():
@@ -466,77 +476,73 @@ class AstoniaLauncher(QWidget):
         return int.from_bytes(options.tobytes(), byteorder="little")
 
     def launch_app(self):
-        server = self.server
-        username = self.character
-        password = self.password
-        width = self.settings_dialog.desired_width.text()
-        height = self.settings_dialog.desired_height.text()
-        sdl_cache = self.settings_dialog.sdl_cache_size.text()
-        sdl_multi = self.settings_dialog.sdl_multi.text()
-        sdl_frames = self.settings_dialog.sdl_frames.text()
+        server = self.server.strip()
+        username = self.character.strip()
+        password = self.password.strip()
+        executable_name = self.settings_dialog.executable_name.text().strip()
+        width = self.settings_dialog.desired_width.value()
+        height = self.settings_dialog.desired_height.value()
+        sdl_cache = self.settings_dialog.sdl_cache_size.value()
+        sdl_multi = self.settings_dialog.sdl_multi.value()
+        sdl_frames = self.settings_dialog.sdl_frames.value()
 
         options_arg = self.create_options_arg()
-        app_path = None
-        app_args = None
-        if sys.platform == "linux" or sys.platform == "linux2":
-            # linux
-            app_path = "wine"
-            app_args = [
-                "bin/moac.exe",
-                f"-u {username}",
-                f"-p {password}",
-                f"-d {server}",
-                f"-w {width}",
-                f"-h {height}",
-                f"-o {options_arg}",
-                f"-c {sdl_cache}",
-                f"-k {sdl_frames}",
-                f"-m {sdl_multi}",
-            ]
 
-        elif sys.platform == "darwin":
-            # OS X
-            app_path = "wine"
-            app_args = [
-                "bin/moac.exe",
-                f"-u {username}",
-                f"-p {password}",
-                f"-d {server}",
-                f"-w {width}",
-                f"-h {height}",
-                f"-o {options_arg}",
-                f"-c {sdl_cache}",
-                f"-k {sdl_frames}",
-                f"-m {sdl_multi}",
-            ]
+        # Validate required fields
+        app_args = {
+            "Server": server,
+            "Username": username,
+            "Password": password,
+            "Executable Name": executable_name,
+            "Width": width,
+            "Height": height,
+            "SDL Cache Size": sdl_cache,
+            "SDL Multi-threading": sdl_multi,
+            "SDL Frames": sdl_frames
+        }
 
+        for key, value in app_args.items():
+            if isinstance(value, str) and not value:
+                QMessageBox.warning(None, "Missing Information", f"{key} is required but is empty.")
+                return  # Cancel execution if any field is empty
+
+        # Construct command line arguments based on platform
+        command_args = [
+            f"-u {username}",
+            f"-p {password}",
+            f"-d {server}",
+            f"-w {width}",
+            f"-h {height}",
+            f"-o {options_arg}",
+            f"-c {sdl_cache}",
+            f"-k {sdl_frames}",
+            f"-m {sdl_multi}",
+        ]
+
+        if sys.platform in ["linux", "linux2", "darwin"]:
+            # Assume Wine is needed to run Windows executable on Unix-like systems
+            app_path = "wine"
+            command_args.insert(0, executable_name)
         elif sys.platform == "win32":
-            # Windows...
-            app_path = "../bin/moac.exe"
-            app_args = [
-                f"-u {username}",
-                f"-p {password}",
-                f"-d {server}",
-                f"-w {width}",
-                f"-h {height}",
-                f"-o {options_arg}",
-                f"-c {sdl_cache}",
-                f"-k {sdl_frames}",
-                f"-m {sdl_multi}",
-            ]
+            # Directly use the executable path on Windows
+            app_path = executable_name
 
         # Launch the app
         try:
-            print(app_path + " " + str(app_args))
-            os.execvp(app_path, [app_path] + app_args)
+            full_command = [app_path] + command_args
+            print("Command to execute:", ' '.join(full_command))  # Debug: print command to be executed
+            os.execvp(app_path, full_command)  # Here, full_command[0] should match app_path
         except OSError as e:
-            self.label.setText(f"Error: {e}")
+            if self.label:
+                self.label.setText(f"Error launching application: {e}")
+            print(f"Error launching application: {e}")
 
     def close(self):
         QApplication.quit()
 
 
 if __name__ == "__main__":
+    os.makedirs("settings", exist_ok=True)
     app = QApplication(sys.argv)
     launcher = AstoniaLauncher()
     launcher.show()

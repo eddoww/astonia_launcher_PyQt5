@@ -6,7 +6,7 @@ PROJECT_NAME = "astonia_launcher"
 a = Analysis(
              ['main.py'],
              binaries=[],
-             datas=[],
+             datas=[('settings/', 'settings')],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
