@@ -68,7 +68,7 @@ class AstoniaLauncher(QWidget):
 
     def init_ui(self):
         # UI setup
-        self.setWindowTitle("Astonia Launcher")
+        self.setWindowTitle("Ugaris Launcher")
 
         self.label = QLabel("Latest Release Notes : ")
 
@@ -81,7 +81,7 @@ class AstoniaLauncher(QWidget):
         self.restore_inputs()
 
         self.PlayButton = QPushButton(self)
-        self.PlayButton.setText("Launch App")
+        self.PlayButton.setText("Launch Ugaris")
         self.PlayButton.setEnabled(False)
 
         self.remember_checkbox = QCheckBox("Remember me")
@@ -243,12 +243,12 @@ class AstoniaLauncher(QWidget):
         button_layout = QHBoxLayout()
 
         # Add the "Add" button to the QHBoxLayout
-        add_server_button = QPushButton("Add")
-        button_layout.addWidget(add_server_button)
+        # add_server_button = QPushButton("Add")
+        # button_layout.addWidget(add_server_button)
 
         # Add the "Remove" button to the QHBoxLayout
-        remove_server_button = QPushButton("Remove")
-        button_layout.addWidget(remove_server_button)
+        # remove_server_button = QPushButton("Remove")
+        # button_layout.addWidget(remove_server_button)
 
         # Create a layout for the dialog
         layout = QVBoxLayout()
@@ -274,8 +274,8 @@ class AstoniaLauncher(QWidget):
         layout.addLayout(button_layout)
 
         # Add server button clicked
-        add_server_button.clicked.connect(self.on_add_server)
-        remove_server_button.clicked.connect(self.on_delete_server)
+        # add_server_button.clicked.connect(self.on_add_server)
+        # remove_server_button.clicked.connect(self.on_delete_server)
 
         # Connect the save button to a function to save the data
         add_character_button.clicked.connect(
@@ -376,25 +376,29 @@ class AstoniaLauncher(QWidget):
             self.save_inputs()
 
     def check_updates(self):
-        # Parse the response for the latest version
-        latest_version = self.release_api_url_body["tag_name"]
+        # Download and parse the version from ugaris.com
+        version_url = "https://ugaris.com/client/version.txt"
+        try:
+            response = requests.get(version_url)
+            response.raise_for_status()
+            latest_version = response.text.strip()
+        except requests.exceptions.RequestException as e:
+            self.label.setText(f"Error checking updates: {e}")
+            return
 
-        # Check if version.txt exists
+        # Check if version.txt exists locally
         if not os.path.isfile(self.latest_version_file):
             self.label.setText("Downloading latest release...")
             self.update_app(latest_version)
             return
 
-        # Check if update is available
+        # Check if an update is available
         with open(self.latest_version_file, "r") as f:
             current_version = f.read().strip()
 
         if current_version != latest_version:
-            # Get release notes
-            release_notes = self.release_api_url_body["body"]
-
             # Display update message
-            message = f"A new version ({latest_version}) of the app is available:\n\n{release_notes}"
+            message = f"A new version ({latest_version}) of the app is available. Do you want to update?"
             response = QMessageBox.question(
                 self, "Update Available", message, QMessageBox.Yes | QMessageBox.No
             )
@@ -407,35 +411,30 @@ class AstoniaLauncher(QWidget):
             self.PlayButton.setEnabled(True)
 
     def update_app(self, latest_version):
-        # Download the latest release from GitHub
-        asset_url = self.release_api_url_body["assets"][0]["browser_download_url"]
-        release_file = self.release_api_url_body["assets"][0]["name"]
+        # Construct the URL for the .zip file
+        zip_url = f"https://ugaris.com/client/{latest_version}_client.zip"
+        zip_file = f"{latest_version}_client.zip"
         try:
-            with requests.get(asset_url, stream=True) as r:
+            with requests.get(zip_url, stream=True) as r:
                 r.raise_for_status()
                 self.progress_bar.show()
-                with open(release_file, "wb") as f:
+                with open(zip_file, "wb") as f:
                     total_length = int(r.headers.get("content-length"))
                     dl = 0
                     for chunk in r.iter_content(chunk_size=8192):
-                        # If you have chunk encoded response uncomment if
-                        # and set chunk_size parameter to None.
-                        # if chunk:
                         f.write(chunk)
                         dl += len(chunk)
                         progress = int(100 * dl / total_length)
-                        print(progress)
                         self.progress_bar.setValue(progress)
                         QApplication.processEvents()
 
         except requests.exceptions.RequestException as e:
-            self.label.setText(f"Error: {e}")
+            self.label.setText(f"Error downloading update: {e}")
             return
 
         # Extract the release files to the current directory
         import zipfile
-
-        with zipfile.ZipFile(release_file, "r") as zip_ref:
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
             zip_ref.extractall(".")
 
         # Update the version file
@@ -443,10 +442,9 @@ class AstoniaLauncher(QWidget):
             f.write(latest_version)
 
         # Clean up
-        os.remove(release_file)
+        os.remove(zip_file)
         self.label.setText(f"Updated to version {latest_version}")
         self.PlayButton.setEnabled(True)
-
     def create_options_arg(self):
 
         option_mapping = {
