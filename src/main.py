@@ -481,7 +481,7 @@ class AstoniaLauncher(QWidget):
             "enable_minimap": 18  # Bit 18: Disables the minimap
         }
 
-        options = bitarray(len(option_mapping) + 7)  # Adjusted size for the maximum bit index used + 1
+        options = bitarray(len(option_mapping) + 19)  # Adjusted size for the maximum bit index used + 1
         options.setall(False)
         if self.settings_dialog:
             for checkbox_name, option_value in option_mapping.items():
