@@ -2,7 +2,7 @@
 
 block_cipher = None
 PROJECT_NAME = "astonia_launcher"
-ICON_FILE = 'icons/uga.ico'
+ICON_FILE = 'icons\uga.ico'
 
 a = Analysis(
              ['main.py'],
