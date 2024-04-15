@@ -47,7 +47,8 @@ class AstoniaLauncher(QWidget):
         self.latest_version_file = os.path.join(self.get_settings_file_path(), 'version.json')
         self.settings_file = os.path.join(self.get_settings_file_path(), 'settings.json')
         self.characters_file = os.path.join(self.get_settings_file_path(), 'characters.json')
-        self.input_file = os.path.join(self.get_settings_file_path(), 'characters.json')
+        self.input_file = os.path.join(self.get_settings_file_path(), 'input.json')
+        self.servers_file = os.path.join(self.get_settings_file_path(), 'servers.json')
         self.release_api_url_body = requests.get(self.release_api_url).json()
 
         # Selected Character
