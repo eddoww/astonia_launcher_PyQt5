@@ -44,9 +44,10 @@ class AstoniaLauncher(QWidget):
         self.repo_owner = "DanielBrockhaus"
         self.repo_name = "astonia_client"
         self.release_api_url = f"https://api.github.com/repos/{self.repo_owner}/{self.repo_name}/releases/latest"
-        self.latest_version_file = os.path.join('settings', 'version.json')
-        self.settings_file = os.path.join('settings', 'settings.json')
-        self.characters_file = os.path.join('settings', 'characters.json')
+        self.latest_version_file = os.path.join(self.get_settings_file_path(), 'version.json')
+        self.settings_file = os.path.join(self.get_settings_file_path(), 'settings.json')
+        self.characters_file = os.path.join(self.get_settings_file_path(), 'characters.json')
+        self.input_file = os.path.join(self.get_settings_file_path(), 'characters.json')
         self.release_api_url_body = requests.get(self.release_api_url).json()
 
         # Selected Character
@@ -66,10 +67,21 @@ class AstoniaLauncher(QWidget):
 
         self.check_updates()
 
+    def get_settings_file_path(self):
+        if sys.platform.startswith('win'):
+            # Windows path in APPDATA
+            appdata_path = os.environ['APPDATA']
+            settings_path = os.path.join(appdata_path, 'Ugaris', 'settings')
+        else:
+            # Linux and MacOS path in home directory
+            home_path = os.path.expanduser('~')
+            settings_path = os.path.join(home_path, '.Ugaris', 'settings')
+        os.makedirs(settings_path, exist_ok=True)  # Ensure the directory exists
+        return settings_path
+
     def init_ui(self):
         # UI setup
         self.setWindowTitle("Ugaris Launcher")
-
         self.label = QLabel("Latest Release Notes : ")
 
         self.progress_bar = QProgressBar()
@@ -349,14 +361,14 @@ class AstoniaLauncher(QWidget):
 
     def restore_inputs(self):
         self.inputs = {}
-        if os.path.isfile("settings/inputs.txt"):
-            with open("settings/inputs.txt", "r") as f:
+        if os.path.isfile(self.input_file + "inputs.txt"):
+            with open(self.input_file + "inputs.txt", "r") as f:
                 for line in f:
                     key, value = line.strip().split(":")
                     self.inputs[key] = value
 
     def save_inputs(self):
-        with open("settings/inputs.txt", "w") as f:
+        with open(self.input_file + "inputs.txt", "w") as f:
             for key, value in self.inputs.items():
                 f.write(f"{key}:{value}\n")
 
@@ -445,6 +457,7 @@ class AstoniaLauncher(QWidget):
         os.remove(zip_file)
         self.label.setText(f"Updated to version {latest_version}")
         self.PlayButton.setEnabled(True)
+
     def create_options_arg(self):
 
         option_mapping = {
@@ -539,12 +552,12 @@ class AstoniaLauncher(QWidget):
             if self.label:
                 self.label.setText(f"Error launching application: {e}")
             print(f"Error launching application: {e}")
+
     def close(self):
         QApplication.quit()
 
 
 if __name__ == "__main__":
-    os.makedirs("settings", exist_ok=True)
     app = QApplication(sys.argv)
     launcher = AstoniaLauncher()
     launcher.show()

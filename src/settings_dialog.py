@@ -15,6 +15,10 @@ from PyQt5.QtWidgets import (
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        if parent:
+            self.settings_file = parent.settings_file  # Use the settings file from the parent
+        else:
+            self.settings_file = "settings/settings.json"  # Fallback path
 
         # Create widgets for all settings
         self.resolution_combo = QComboBox()
@@ -135,7 +139,7 @@ class SettingsDialog(QDialog):
                          for name in dir(self) if
                          isinstance(getattr(self, name), (QCheckBox, QSpinBox, QComboBox, QLineEdit))}
         try:
-            with open("settings/settings.json", "w") as f:
+            with open(self.settings_file, "w") as f:
                 json.dump(settings_dict, f, indent=4)
             print("Settings saved successfully.")
         except Exception as e:
@@ -145,7 +149,7 @@ class SettingsDialog(QDialog):
 
     def load_settings_from_file(self):
         try:
-            with open("settings/settings.json", "r") as f:
+            with open(self.settings_file, "r") as f:
                 settings_dict = json.load(f)
             for key, value in settings_dict.items():
                 widget = getattr(self, key, None)
