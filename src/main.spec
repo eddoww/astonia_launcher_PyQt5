@@ -2,6 +2,7 @@
 
 block_cipher = None
 PROJECT_NAME = "astonia_launcher"
+ICON_FILE = 'icons/uga.ico'
 
 a = Analysis(
              ['main.py'],
@@ -26,7 +27,8 @@ exe = EXE(pyz,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          console=False )
+          console=False,
+          icon=ICON_FILE)
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
