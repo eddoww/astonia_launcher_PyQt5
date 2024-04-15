@@ -448,20 +448,24 @@ class AstoniaLauncher(QWidget):
     def create_options_arg(self):
 
         option_mapping = {
-            "enable_dark_gui": 0,
-            "enable_context": 1,
-            "enable_keybindings": 2,
-            "enable_smaller_bottom_window": 3,
-            "enable_smaller_top_window": 4,
-            "enable_big_health_bar": 5,
-            "enable_sound": 6,
-            "enable_large_font": 7,
-            "enable_true_full_screen": 8,
-            "enable_legacy_mouse_wheel": 9,
-            "enable_gamma_increase": 14,  # Assuming bit positions 14-15 for gamma
-            "enable_minimap_management": 13,
-            "enable_minimap": 18,
-            "enable_appdata_usage": 12
+            "enable_dark_gui": 0,  # Bit 0: Dark GUI by Tegra
+            "enable_context": 1,  # Bit 1: Context menu
+            "enable_keybindings": 2,  # Bit 2: New keybindings
+            "enable_smaller_bottom_window": 3,  # Bit 3: Smaller bottom GUI
+            "enable_smaller_top_window": 4,  # Bit 4: Top GUI slides away
+            "enable_big_health_bar": 5,  # Bit 5: Bigger health/mana bars
+            "enable_sound": 6,  # Bit 6: Sound
+            "enable_large_font": 7,  # Bit 7: Large font
+            "enable_true_full_screen": 8,  # Bit 8: True full screen mode
+            "enable_legacy_mouse_wheel": 9,  # Bit 9: Legacy mouse wheel logic
+            "enable_inventory_optimization": 10,  # Bit 10: Out-of-order execution of inventory access
+            "enable_animation_optimization": 11,  # Bit 11: Reduces animation buffer
+            "enable_appdata_usage": 12,  # Bit 12: Writes application files to %appdata%
+            "enable_minimap_management": 13,  # Bit 13: Loading and saving of minimaps
+            "enable_gamma_increase": 14,  # Bit 14 and 15: Increase gamma
+            "enable_sliding_top_bar_sensitivity": 16,  # Bit 16: Makes the sliding top bar less sensitive
+            "enable_lighting_effects_reduction": 17,  # Bit 17: Reduces lighting effects for more performance
+            "enable_minimap": 18  # Bit 18: Disables the minimap
         }
 
         options = bitarray(len(option_mapping) + 7)  # Adjusted size for the maximum bit index used + 1
@@ -478,8 +482,6 @@ class AstoniaLauncher(QWidget):
         username = self.character.strip()
         password = self.password.strip()
         executable_name = self.settings_dialog.executable_name.text().strip()
-        width = self.settings_dialog.desired_width.value()
-        height = self.settings_dialog.desired_height.value()
         sdl_cache = self.settings_dialog.sdl_cache_size.value()
         sdl_multi = self.settings_dialog.sdl_multi.value()
         sdl_frames = self.settings_dialog.sdl_frames.value()
@@ -492,13 +494,12 @@ class AstoniaLauncher(QWidget):
             "Username": username,
             "Password": password,
             "Executable Name": executable_name,
-            "Width": width,
-            "Height": height,
             "SDL Cache Size": sdl_cache,
             "SDL Multi-threading": sdl_multi,
             "SDL Frames": sdl_frames
         }
 
+        # Validate empty fields before proceeding
         for key, value in app_args.items():
             if isinstance(value, str) and not value:
                 QMessageBox.warning(None, "Missing Information", f"{key} is required but is empty.")
@@ -509,13 +510,17 @@ class AstoniaLauncher(QWidget):
             f"-u {username}",
             f"-p {password}",
             f"-d {server}",
-            f"-w {width}",
-            f"-h {height}",
             f"-o {options_arg}",
             f"-c {sdl_cache}",
             f"-k {sdl_frames}",
             f"-m {sdl_multi}",
         ]
+
+        if not (
+                self.settings_dialog.enable_fullscreen.isChecked() or self.settings_dialog.enable_true_full_screen.isChecked()):
+            resolution = self.settings_dialog.resolution_combo.currentText()
+            width, height = resolution.split('x')
+            command_args.extend([f"-w {width}", f"-h {height}"])
 
         if sys.platform in ["linux", "linux2", "darwin"]:
             # Assume Wine is needed to run Windows executable on Unix-like systems
@@ -534,7 +539,6 @@ class AstoniaLauncher(QWidget):
             if self.label:
                 self.label.setText(f"Error launching application: {e}")
             print(f"Error launching application: {e}")
-
     def close(self):
         QApplication.quit()
 
