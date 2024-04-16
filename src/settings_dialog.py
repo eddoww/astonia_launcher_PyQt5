@@ -42,7 +42,7 @@ class SettingsDialog(QDialog):
         self.enable_minimap = QCheckBox()  # To enable/disable minimap
         self.enable_sliding_top_bar_sensitivity = QCheckBox()  # Less reactive slider top
         self.enable_appdata_usage = QCheckBox()  # To use %appdata% for storing application files
-        self.enable_lighting_effects_reduction = QCheckBox()  # To use %appdata% for storing application files
+        self.enable_lighting_effects_reduction = QCheckBox()  # Disable some lightning effects for better performance
         self.executable_name = QLineEdit()
         self.sdl_frames = QSpinBox()
         self.sdl_cache_size = QSpinBox()

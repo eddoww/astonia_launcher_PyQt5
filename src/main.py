@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import (
     QAbstractItemView, QInputDialog, QHBoxLayout,
 )
 from bitarray import bitarray
+from bitarray.util import ba2int
 
 from ServerComboBox import ServerComboBox
 from settings_dialog import SettingsDialog
@@ -477,19 +478,20 @@ class AstoniaLauncher(QWidget):
             "enable_appdata_usage": 12,  # Bit 12: Writes application files to %appdata%
             "enable_minimap_management": 13,  # Bit 13: Loading and saving of minimaps
             "enable_gamma_increase": 14,  # Bit 14 and 15: Increase gamma
+            "enable_gamma_increase_more": 15,  # Bit 15: Increase more gamma
             "enable_sliding_top_bar_sensitivity": 16,  # Bit 16: Makes the sliding top bar less sensitive
             "enable_lighting_effects_reduction": 17,  # Bit 17: Reduces lighting effects for more performance
             "enable_minimap": 18  # Bit 18: Disables the minimap
         }
 
-        options = bitarray(len(option_mapping) + 19)  # Adjusted size for the maximum bit index used + 1
+        options = bitarray(19, endian="little")  # Adjusted size for the maximum bit index used + 1
         options.setall(False)
         if self.settings_dialog:
             for checkbox_name, option_value in option_mapping.items():
                 checkbox = getattr(self.settings_dialog, checkbox_name)
                 if checkbox.isChecked():
                     options[option_value] = True
-        return int.from_bytes(options.tobytes(), byteorder="little")
+            return ba2int(options)
 
     def launch_app(self):
         server = self.server.strip()
