@@ -1,4 +1,5 @@
 import json
+import os
 
 from PyQt5.QtWidgets import (
     QDialog,
@@ -15,6 +16,10 @@ from PyQt5.QtWidgets import (
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # Variables
+        self.widgets = None
+
         if parent:
             self.settings_file = parent.settings_file  # Use the settings file from the parent
         else:
@@ -54,25 +59,57 @@ class SettingsDialog(QDialog):
         self.sdl_multi.setRange(4, 10)  # Assuming a realistic upper limit
 
         # Create layout for settings
-        layout = QGridLayout()
-        self.add_widgets_to_layout(layout)
+        self.widget_layout = QGridLayout()
+        self.setup_widgets()
 
         # Connect the fullscreen checkbox to the toggle function
         self.enable_fullscreen.toggled.connect(self.handle_checkbox_toggle)
         self.enable_true_full_screen.toggled.connect(self.handle_checkbox_toggle)
 
-
         # Buttons
         self.save_button = QPushButton("Save")
         self.cancel_button = QPushButton("Cancel")
-        layout.addWidget(self.save_button, 26, 0)
-        layout.addWidget(self.cancel_button, 26, 1)
+        self.widget_layout.addWidget(self.save_button, 26, 0)
+        self.widget_layout.addWidget(self.cancel_button, 26, 1)
 
         # Signals
         self.save_button.clicked.connect(self.save_settings_to_file)
         self.cancel_button.clicked.connect(self.cancel)
 
-        self.setLayout(layout)
+        self.setLayout(self.widget_layout)
+
+        if not self.load_settings_from_file():
+            self.initialize_default_settings()
+
+    def setup_widgets(self):
+        self.widgets = [
+            (self.enable_true_full_screen, "Fullscreen:", 0, False),
+            (self.enable_fullscreen, "Windowed Fullscreen:", 1, True),
+            (self.resolution_combo, "Resolution (Windowed mode only):", 2, "1600x1200"),
+            (self.enable_sound, "Sound:", 3, True),
+            (self.enable_dark_gui, "Dark GUI:", 4, False),
+            (self.enable_context, "Context Menu Enabled:", 5, True),
+            (self.enable_keybindings, "Enable Keybindings:", 6, True),
+            (self.enable_smaller_bottom_window, "Smaller Bottom GUI:", 7, False),
+            (self.enable_smaller_top_window, "Top GUI Slides Away:", 8, False),
+            (self.enable_big_health_bar, "Big Health/Mana Bars:", 9, True),
+            (self.enable_large_font, "Large Font:", 10, False),
+            (self.enable_legacy_mouse_wheel, "Legacy Mouse Wheel Logic:", 12, False),
+            (self.enable_inventory_optimization, "Faster Inventory", 13, True),
+            (self.enable_animation_optimization, "Reduced animation buffer:", 14, False),
+            (self.enable_gamma_increase, "Increase Gamma:", 15, False),
+            (self.enable_gamma_increase_more, "More Gamma Increase:", 16, False),
+            (self.enable_minimap_management, "Manage Minimaps:", 17, True),
+            (self.enable_minimap, "Enable Minimap:", 18, True),
+            (self.enable_sliding_top_bar_sensitivity, "Makes the sliding top bar less sensitive:", 19, False),
+            (self.enable_lighting_effects_reduction, "Reduces lighting effects for more performance:", 20, False),
+            (self.enable_appdata_usage, "Write to %appdata%:", 21, False),
+            (self.executable_name, "Executable Name:", 22, "bin/moac.exe"),
+            (self.sdl_frames, "SDL Frames:", 23, 24),
+            (self.sdl_cache_size, "SDL Cache Size:", 24, 8000),
+            (self.sdl_multi, "SDL Multi-threading:", 25, 3),
+        ]
+        self.add_widgets_to_layout()
 
     def handle_checkbox_toggle(self):
         # Mutual exclusivity
@@ -86,37 +123,20 @@ class SettingsDialog(QDialog):
         self.resolution_combo.setVisible(
             not (self.enable_fullscreen.isChecked() or self.enable_true_full_screen.isChecked()))
 
-    def add_widgets_to_layout(self, layout):
-        widgets = [
-            (self.enable_true_full_screen, "Fullscreen:", 0),
-            (self.enable_fullscreen, "Windowed Fullscreen:", 1),
-            (self.resolution_combo, "Resolution (Windowed mode only):", 2),
-            (self.enable_sound, "Sound:", 3),
-            (self.enable_dark_gui, "Dark GUI:", 4),
-            (self.enable_context, "Context Menu Enabled:", 5),
-            (self.enable_keybindings, "Enable Keybindings:", 6),
-            (self.enable_smaller_bottom_window, "Smaller Bottom GUI:", 7),
-            (self.enable_smaller_top_window, "Top GUI Slides Away:", 8),
-            (self.enable_big_health_bar, "Big Health/Mana Bars:", 9),
-            (self.enable_large_font, "Large Font:", 10),
-            (self.enable_legacy_mouse_wheel, "Legacy Mouse Wheel Logic:", 12),
-            (self.enable_inventory_optimization, "Faster Inventory", 13),
-            (self.enable_animation_optimization, "Reduced animation buffer:", 14),
-            (self.enable_gamma_increase, "Increase Gamma:", 15),
-            (self.enable_gamma_increase_more, "More Gamma Increase:", 16),
-            (self.enable_minimap_management, "Manage Minimaps:", 17),
-            (self.enable_minimap, "Enable Minimap:", 18),
-            (self.enable_sliding_top_bar_sensitivity, "Makes the sliding top bar less sensitive:", 19),
-            (self.enable_lighting_effects_reduction, "Reduces lighting effects for more performance:", 20),
-            (self.enable_appdata_usage, "Write to %appdata%:", 21),
-            (self.executable_name, "Executable Name:", 22),
-            (self.sdl_frames, "SDL Frames:", 23),
-            (self.sdl_cache_size, "SDL Cache Size:", 24),
-            (self.sdl_multi, "SDL Multi-threading:", 25),
-        ]
-        for widget, label, row in widgets:
-            layout.addWidget(QLabel(label), row, 0)
-            layout.addWidget(widget, row, 1)
+    def add_widgets_to_layout(self):
+        for widget, label, row, default in self.widgets:
+            self.widget_layout.addWidget(QLabel(label), row, 0)
+            self.widget_layout.addWidget(widget, row, 1)
+            if isinstance(widget, QCheckBox):
+                widget.setChecked(default)
+            elif isinstance(widget, QComboBox):
+                index = widget.findText(default)
+                if index >= 0:
+                    widget.setCurrentIndex(index)
+            elif isinstance(widget, QLineEdit):
+                widget.setText(default if isinstance(widget, QLineEdit) else default)
+            elif isinstance(widget, QSpinBox):
+                widget.setValue(int(default))
 
     def cancel(self):
         self.close()
@@ -166,5 +186,11 @@ class SettingsDialog(QDialog):
                             widget.setCurrentIndex(index)
         except FileNotFoundError:
             print("Settings file not found, loading defaults.")
+            return False
         except json.JSONDecodeError:
             print("Error decoding settings, check file format.")
+        return True
+
+    def initialize_default_settings(self):
+        if not os.path.exists(self.settings_file):
+            self.save_settings_to_file()

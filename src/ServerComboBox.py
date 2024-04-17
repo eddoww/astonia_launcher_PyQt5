@@ -20,7 +20,7 @@ class ServerComboBox(QComboBox):
             # Create a new servers file with default values
             default_servers = [
                 {"name": "Ugaris Server", "address": "login.ugaris.com"},
-                {"name": "Localhost (127.0.0.1)", "address": "127.0.0.1"}
+                # {"name": "Localhost (127.0.0.1)", "address": "127.0.0.1"}
             ]
             with open(self.servers_file, 'w') as f:
                 json.dump({'servers': default_servers}, f)

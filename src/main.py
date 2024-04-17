@@ -59,7 +59,7 @@ class AstoniaLauncher(QWidget):
 
         # Settings dialog
         self.settings_dialog = SettingsDialog(self)
-        self.settings_dialog.load_settings_from_file()
+        # self.settings_dialog.load_settings_from_file() -- this is now done from init function inside settings_dialog
         # Add Character Dialog
         self.add_character_dialog = QDialog(self)
 
