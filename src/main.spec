@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
-PROJECT_NAME = "astonia_launcher"
+PROJECT_NAME = "ugaris_launcher"
 ICON_FILE = '..\\icons\\uga.ico'
 
 a = Analysis(
