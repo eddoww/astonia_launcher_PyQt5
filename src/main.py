@@ -538,13 +538,19 @@ class AstoniaLauncher(QWidget):
             width, height = resolution.split('x')
             command_args.extend([f"-w {width}", f"-h {height}"])
 
-        if sys.platform in ["linux", "linux2", "darwin"]:
-            # Assume Wine is needed to run Windows executable on Unix-like systems
-            app_path = "wine"
-            command_args.insert(0, executable_name)
-        elif sys.platform == "win32":
-            # Directly use the executable path on Windows
-            app_path = executable_name
+        if 'WINEPREFIX' in os.environ or 'STEAM_COMPAT_DATA_PATH' in os.environ:
+            # The game is running under Wine
+            print("Running under Wine/Proton")
+            app_path = executable_name  # Direct path since Wine is already managing execution
+        else:
+            # Additional platform checks to set up the command correctly
+            if sys.platform in ["linux", "linux2", "darwin"]:
+                # Assume Wine is needed to run Windows executable on Unix-like systems
+                app_path = "wine"
+                command_args.insert(0, executable_name)
+            elif sys.platform == "win32":
+                # Directly use the executable path on Windows
+                app_path = executable_name
 
         # Launch the app
         try:
