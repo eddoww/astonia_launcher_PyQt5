@@ -18,11 +18,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-2019
+          - os: windows-latest
             platform-name: windows.x64
-          - os: macos-10.15
+          - os: macos-latest
             platform-name: macos.x64
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             platform-name: linux.x64
     steps:
       - name: Checkout code
